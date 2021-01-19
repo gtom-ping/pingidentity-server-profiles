@@ -12,6 +12,21 @@ dsconfig create-access-token-validator \
     --type mock  \
     --set enabled:true 
 
+dsconfig create-scim-resource-type \
+    --type-name Users  \
+    --type pass-through  \
+    --set enabled:true  \
+    --set endpoint:Users  \
+    --set primary-store-adapter:UserStoreAdapter 
+
+dsconfig create-token-resource-lookup-method \
+    --validator-name 'Mock Access Token Validator'  \
+    --method-name 'User match SCIM uid to token sub'  \
+    --type scim  \
+    --set evaluation-order-index:1  \
+    --set scim-resource-type:Users  \
+    --set 'match-filter:uid eq "%sub%"' 
+
 dsconfig create-token-resource-lookup-method \
     --validator-name 'Mock Access Token Validator'  \
     --method-name 'User match SCIM uid to token sub'  \
