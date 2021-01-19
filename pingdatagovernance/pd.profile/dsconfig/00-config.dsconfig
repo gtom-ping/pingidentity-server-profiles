@@ -1,16 +1,52 @@
+# Configuration changes to bring source (config-postSetup.gz) to target (config.ldif)
+# Comparison options:
+#   Ignore differences in configuration that is part of the topology registry
+#   Ignore differences on shared host
+#   Ignore differences by instance
+
 dsconfig set-trust-manager-provider-prop \
     --provider-name 'Blind Trust'  \
     --set enabled:true 
+
+dsconfig create-external-server \
+    --server-name 'Directory Server (pingdirectory:636)'  \
+    --type ping-identity-ds  \
+    --set server-host-name:pingdirectory  \
+    --set server-port:636  \
+    --set location:Docker  \
+    --set 'bind-dn:cn=Governance User,cn=Root DNs,cn=config'  \
+    --set password:AAAqoGEOC2RBec0rdipHXwlJMuGS0ahPYYQ=  \
+    --set connection-security:ssl  \
+    --set key-manager-provider:Null  \
+    --set 'trust-manager-provider:Blind Trust' 
 
 dsconfig create-external-server \
     --server-name 'Jokes API'  \
     --type api  \
     --set base-url:http://upstream-api:3000 
 
-dsconfig create-access-token-validator \
-    --validator-name 'Mock Access Token Validator'  \
-    --type mock  \
-    --set enabled:true 
+dsconfig create-external-server \
+    --server-name 'Policy Administration GUI'  \
+    --type policy  \
+    --set base-url:https://pingdatagovernancepap:8443  \
+    --set hostname-verification-method:allow-all  \
+    --set key-manager-provider:Null  \
+    --set 'trust-manager-provider:Blind Trust'  \
+    --set shared-secret:AACheH1YG1Tfo+HCtwTrCKMEm38JsNjGLgg=  \
+    --set 'branch:PDG Tutorials' 
+
+dsconfig create-load-balancing-algorithm \
+    --algorithm-name 'Directory Server LBA'  \
+    --type failover  \
+    --set enabled:true  \
+    --set 'backend-server:Directory Server (pingdirectory:636)'  \
+    --set use-location:false 
+
+dsconfig set-store-adapter-prop \
+    --adapter-name UserStoreAdapter  \
+    --set enabled:true  \
+    --set 'load-balancing-algorithm:Directory Server LBA'  \
+    --set create-dn-pattern:entryUUID=server-generated,ou=people,dc=example,dc=com 
 
 dsconfig create-scim-resource-type \
     --type-name Users  \
@@ -19,13 +55,10 @@ dsconfig create-scim-resource-type \
     --set endpoint:Users  \
     --set primary-store-adapter:UserStoreAdapter 
 
-dsconfig create-token-resource-lookup-method \
+dsconfig create-access-token-validator \
     --validator-name 'Mock Access Token Validator'  \
-    --method-name 'User match SCIM uid to token sub'  \
-    --type scim  \
-    --set evaluation-order-index:1  \
-    --set scim-resource-type:Users  \
-    --set 'match-filter:uid eq "%sub%"' 
+    --type mock  \
+    --set enabled:true 
 
 dsconfig create-token-resource-lookup-method \
     --validator-name 'Mock Access Token Validator'  \
@@ -50,9 +83,17 @@ dsconfig set-policy-decision-service-prop \
     --set decision-response-view:evaluated-entities  \
     --set decision-response-view:request 
 
+dsconfig set-connection-handler-prop \
+    --handler-name 'HTTPS Connection Handler'  \
+    --reset web-application-extension 
+
+dsconfig set-gauge-prop \
+    --gauge-name 'License Expiration (Days)'  \
+    --set warning-value:10.0 
+
 dsconfig set-log-publisher-prop \
     --publisher-name 'Debug Trace Logger'  \
-    --set enabled:false  \
+    --set enabled:true  \
     --remove 'retention-policy:File Count Retention Policy'  \
     --add 'retention-policy:Retain Two Files Retention Policy' 
 
